@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<p>I was having my morning coffee last Tuesday when I got hit with the usual email avalanche: three GitHub notifications, two CI/CD failure alerts, a customer complaint, and yet another &quot;urgent&quot; report from our analytics team. Sound familiar?</p>
+<p>Here&#39;s the thing that bugged me: I found myself doing the same dance every morning. Open email, read GitHub notification, manually check the PR, copy the issue number, paste it into Slack... rinse and repeat for each alert. It felt like I was a human API gateway between my inbox and the rest of my workflow.</p>
+<p>Then it hit me – what if I could treat my email like a log file? You know, just <code>tail -f</code> it and pipe the output to whatever tool I needed? What if instead of manually processing each email, I could turn my inbox into a real-time data stream?</p>
+<p>That&#39;s how <strong>GmailTail</strong> was born. It&#39;s basically <code>tail -f</code> for Gmail, but with superpowers. Real-time monitoring, smart filtering, JSON output, and it plays nice with every tool in your terminal.</p>
+<h2 id="why-i-built-this-thing">Why I Built This Thing</h2>
+<h3 id="my-email-workflow-was-driving-me-crazy">My Email Workflow Was Driving Me Crazy</h3>
+<p>Let me paint you a picture. Every morning, I&#39;d wake up to:</p>
+<ul>
+<li>15+ GitHub notifications (because apparently everyone loves late-night commits)</li>
+<li>At least 3 &quot;Build Failed&quot; emails from our CI pipeline</li>
+<li>Customer support tickets that need immediate attention</li>
+<li>Daily reports from various services that I&#39;d manually copy-paste into spreadsheets</li>
+</ul>
+<p>The kicker? Email clients are built for humans, not automation. They&#39;re great for reading and replying, but terrible for integrating with scripts and workflows. And Gmail API? Don&#39;t get me started – it&#39;s like using a sledgehammer to crack a nut for simple tasks.</p>
+<p>I wanted something dead simple:</p>
+<ul>
+<li>Watch my inbox in real-time (like watching logs)</li>
+<li>Filter emails with Gmail&#39;s powerful search</li>
+<li>Output clean JSON that I can pipe to any tool</li>
+<li>No complex API setup, just a simple command-line tool</li>
+</ul>
+<h2 id="what-gmailtail-actually-does">What GmailTail Actually Does</h2>
+<h3 id="the-basics-it-s-pretty-straightforward-">The Basics (It&#39;s Pretty Straightforward)</h3>
+<p>Want to watch your inbox in real-time? Just run:</p>
+<pre><code class="lang-bash">gmailtail <span class="hljs-comment">--tail</span>
+</code></pre>
+<p>That&#39;s it. New emails pop up as they arrive, formatted as clean JSON.</p>
+<h3 id="getting-fancy-with-filters">Getting Fancy with Filters</h3>
+<p>Here&#39;s where it gets interesting. Say you only care about GitHub notifications:</p>
+<pre><code class="lang-bash"><span class="hljs-attribute">gmailtail</span> --from <span class="hljs-string">"noreply<span class="hljs-variable">@github</span>.com"</span> --tail
+</code></pre>
+<p>Or maybe you want to catch all those pesky error alerts:</p>
+<pre><code class="lang-bash"><span class="hljs-comment">gmailtail</span> <span class="hljs-literal">-</span><span class="hljs-literal">-</span><span class="hljs-comment">query</span> <span class="hljs-comment">"subject:error"</span> <span class="hljs-literal">-</span><span class="hljs-literal">-</span><span class="hljs-comment">tail</span>
+</code></pre>
+<p>You can even get creative with complex queries:</p>
+<pre><code class="lang-bash"><span class="hljs-comment">gmailtail</span> <span class="hljs-literal">-</span><span class="hljs-literal">-</span><span class="hljs-comment">query</span> <span class="hljs-comment">"from:github</span><span class="hljs-string">.</span><span class="hljs-comment">com</span> <span class="hljs-comment">AND</span> <span class="hljs-comment">label:important"</span> <span class="hljs-literal">-</span><span class="hljs-literal">-</span><span class="hljs-comment">tail</span>
+</code></pre>
+<h3 id="different-output-flavors">Different Output Flavors</h3>
+<p>Need the email body too? No problem:</p>
+<pre><code class="lang-bash"><span class="hljs-comment">gmailtail</span> <span class="hljs-literal">-</span><span class="hljs-literal">-</span><span class="hljs-comment">format</span> <span class="hljs-comment">json</span><span class="hljs-literal">-</span><span class="hljs-comment">lines</span> <span class="hljs-literal">-</span><span class="hljs-literal">-</span><span class="hljs-comment">include</span><span class="hljs-literal">-</span><span class="hljs-comment">body</span> <span class="hljs-literal">-</span><span class="hljs-literal">-</span><span class="hljs-comment">max</span><span class="hljs-literal">-</span><span class="hljs-comment">body</span><span class="hljs-literal">-</span><span class="hljs-comment">length</span> <span class="hljs-comment">500</span> <span class="hljs-literal">-</span><span class="hljs-literal">-</span><span class="hljs-comment">tail</span>
+</code></pre>
+<p>Only want unread emails with attachments? Easy:</p>
+<pre><code class="lang-bash"><span class="hljs-comment">gmailtail</span> <span class="hljs-literal">-</span><span class="hljs-literal">-</span><span class="hljs-comment">unread</span><span class="hljs-literal">-</span><span class="hljs-comment">only</span> <span class="hljs-literal">-</span><span class="hljs-literal">-</span><span class="hljs-comment">has</span><span class="hljs-literal">-</span><span class="hljs-comment">attachment</span> <span class="hljs-literal">-</span><span class="hljs-literal">-</span><span class="hljs-comment">tail</span>
+</code></pre>
+<h3 id="interactive-mode-for-the-explorers-">Interactive Mode (For the Explorers)</h3>
+<p>Sometimes you just want to poke around:</p>
+<pre><code class="lang-bash">gmailtail <span class="hljs-comment">--repl</span>
+</code></pre>
+<p>Then you can play around:</p>
+<pre><code>gmailtail&gt; unread important <span class="hljs-number">5</span>
+gmailtail&gt; query from:github<span class="hljs-selector-class">.com</span>
+gmailtail&gt; labels
+</code></pre><h2 id="how-i-actually-use-this-thing">How I Actually Use This Thing</h2>
+<h3 id="auto-handling-github-pr-notifications">Auto-handling GitHub PR Notifications</h3>
+<p>This one&#39;s my favorite. I used to manually check every GitHub notification. Now? I just pipe them to a script:</p>
+<pre><code class="lang-bash">gmailtail --from <span class="hljs-string">"notifications@github.com"</span> --tail | <span class="hljs-type">\
+  jq</span> -r 'select(.subject | <span class="hljs-type">test</span>(<span class="hljs-string">"Pull Request"</span>)) | 
+         <span class="hljs-type">.subject</span> | <span class="hljs-type">capture</span>(<span class="hljs-string">".*#(?&lt;number&gt;[0-9]+).*"</span>) | <span class="hljs-type">.number</span>'
+</code></pre>
+<p>Boom. PR numbers extracted automatically. I can feed these into Slack bots, update project boards, whatever.</p>
+<h3 id="never-miss-a-build-failure-again">Never Miss a Build Failure Again</h3>
+<p>Our CI used to fail silently (well, not silently, but I&#39;d miss the emails). Now I get desktop notifications:</p>
+<pre><code class="lang-bash">gmailtail --query <span class="hljs-string">"subject:build AND subject:failed"</span> --tail | \
+  jq -r <span class="hljs-string">'.subject'</span> | \
+  <span class="hljs-keyword">while</span> <span class="hljs-built_in">read</span> subject; <span class="hljs-keyword">do</span>
+    osascript <span class="hljs-_">-e</span> <span class="hljs-string">"display notification \"<span class="hljs-variable">$subject</span>\" with title \"Build Failed\""</span>
+  <span class="hljs-keyword">done</span>
+</code></pre>
+<p>My Mac literally yells at me when builds break. It&#39;s beautiful.</p>
+<h3 id="production-alerts-go-straight-to-our-dashboard">Production Alerts Go Straight to Our Dashboard</h3>
+<p>We have a monitoring dashboard, but it was annoying to manually add email alerts. Now they flow in automatically:</p>
+<pre><code class="lang-bash">gmailtail --query <span class="hljs-string">"subject:alert OR subject:error"</span> --tail | <span class="hljs-string">\</span>
+  jq <span class="hljs-string">'{time: .timestamp, from: .from.email, subject: .subject}'</span> | <span class="hljs-string">\</span>
+  curl -X POST -H <span class="hljs-string">"Content-Type: application/json"</span> <span class="hljs-string">\</span>
+       -d @- http:<span class="hljs-regexp">//localhost:3000/api/alerts</span>
+</code></pre>
+<h3 id="ai-powered-email-summaries-because-why-not-">AI-Powered Email Summaries (Because Why Not?)</h3>
+<p>Got important emails but no time to read them all? Let AI do the heavy lifting:</p>
+<pre><code class="lang-bash">gmailtail --label important --include-body --tail | \
+  jq -r <span class="hljs-string">'.body'</span> | \
+  <span class="hljs-keyword">while</span> <span class="hljs-built_in">read</span> body; <span class="hljs-keyword">do</span>
+    <span class="hljs-built_in">echo</span> <span class="hljs-string">"<span class="hljs-variable">$body</span>"</span> | curl -X POST \
+      -H <span class="hljs-string">"Content-Type: application/json"</span> \
+      <span class="hljs-_">-d</span> <span class="hljs-string">'{"text": "'</span><span class="hljs-string">"<span class="hljs-variable">$body</span>"</span><span class="hljs-string">'"}'</span> \
+      https://api.openai.com/v1/chat/completions
+  <span class="hljs-keyword">done</span>
+</code></pre>
+<p>I get AI summaries of important emails in real-time. It&#39;s like having a personal assistant who never sleeps.</p>
+<h2 id="configuration-made-easy">Configuration Made Easy</h2>
+<p>I got tired of typing the same command-line flags every time, so I added YAML support. Just create a <code>gmailtail.yaml</code> file:</p>
+<pre><code class="lang-yaml"><span class="hljs-attr">auth:</span>
+<span class="hljs-attr">  credentials_file:</span> ~/.config/gmailtail/credentials.json
+
+<span class="hljs-attr">filters:</span>
+<span class="hljs-attr">  query:</span> <span class="hljs-string">"label:important OR subject:urgent"</span>
+<span class="hljs-attr">  unread_only:</span> <span class="hljs-literal">true</span>
+
+<span class="hljs-attr">output:</span>
+<span class="hljs-attr">  format:</span> json-lines
+<span class="hljs-attr">  include_body:</span> <span class="hljs-literal">true</span>
+
+<span class="hljs-attr">monitoring:</span>
+<span class="hljs-attr">  poll_interval:</span> <span class="hljs-number">30</span>
+<span class="hljs-attr">  tail:</span> <span class="hljs-literal">true</span>
+</code></pre>
+<p>Then just run:</p>
+<pre><code class="lang-bash">gmailtail <span class="hljs-comment">--config gmailtail.yaml</span>
+</code></pre>
+<p>Much cleaner, right?</p>
+<h2 id="getting-started-the-easy-part-">Getting Started (The Easy Part)</h2>
+<h3 id="what-s-under-the-hood">What&#39;s Under the Hood</h3>
+<p>Nothing fancy – just solid Python with some good libraries:</p>
+<ul>
+<li>Python 3.8+ (you probably have this already)</li>
+<li>Gmail API (Google&#39;s official stuff)</li>
+<li>Click for the command-line interface</li>
+<li>OAuth2 for secure authentication</li>
+<li>YAML support because JSON config files are painful</li>
+</ul>
+<h3 id="installation">Installation</h3>
+<p>Clone it and install:</p>
+<pre><code class="lang-bash">git clone http<span class="hljs-variable">s:</span>//github.<span class="hljs-keyword">com</span>/c4pt0r/gmailtail.git
+<span class="hljs-keyword">cd</span> gmailtail
+uv <span class="hljs-keyword">sync</span>
+</code></pre>
+<h3 id="the-oauth-dance">The OAuth Dance</h3>
+<p>Yeah, you need to do the Google OAuth thing. It&#39;s annoying but necessary:</p>
+<ol>
+<li>Go to Google Cloud Console</li>
+<li>Enable Gmail API</li>
+<li>Create OAuth2 credentials</li>
+<li>Download the <code>credentials.json</code> file</li>
+<li>Run: <code>uv run gmailtail --credentials credentials.json --tail</code></li>
+</ol>
+<p>First time you run it, it&#39;ll open a browser window for authentication. After that, it just works.</p>
+<h2 id="what-s-next">What&#39;s Next</h2>
+<p>I&#39;ve got some ideas brewing:</p>
+<p><strong>Plugin System</strong>: Imagine custom processors like a &quot;morning report generator&quot; that summarizes overnight activity.</p>
+<p><strong>More Output Formats</strong>: CSV, HTML, maybe even a simple web interface for teammates who live in browsers.</p>
+<p><strong>Built-in AI</strong>: Instead of piping to external APIs, why not have summarization and analysis built right in?</p>
+<p><strong>Multi-account Support</strong>: Because some of us have way too many email accounts.</p>
+<p><strong>Web UI</strong>: A simple dashboard for people who prefer clicking over typing commands.</p>
+<h2 id="why-this-matters">Why This Matters</h2>
+<p>Here&#39;s the thing – GmailTail isn&#39;t just another email tool. It&#39;s about turning your inbox from a passive information dump into an active part of your workflow.</p>
+<p>Think about it: your email is already a central hub for notifications, alerts, and updates. Instead of manually processing each one, you can now:</p>
+<ul>
+<li><strong>Automate responses</strong>: Connect to databases, notification systems, whatever you need</li>
+<li><strong>Integrate with existing tools</strong>: jq, curl, AI models, Slack webhooks – they all play nice</li>
+<li><strong>Build custom workflows</strong>: Create your own email-driven automation without complex programming</li>
+</ul>
+<p>It&#39;s like having a personal assistant who never sleeps, never gets tired, and processes your emails faster than you can blink.</p>
+<p>The best part? It follows the Unix philosophy – do one thing well and play nicely with others. You&#39;re not locked into some complex platform; you&#39;re just adding a simple tool to your existing toolkit.</p>
+<h2 id="want-to-try-it-">Want to Try It?</h2>
+<p>If you&#39;re tired of manually processing emails and want to automate your inbox workflow, give GmailTail a shot. It&#39;s saved me hours of manual work every week, and I think you&#39;ll find it useful too.</p>
+<p><strong>Repository</strong>: <a href="https://github.com/c4pt0r/gmailtail">https://github.com/c4pt0r/gmailtail</a><br><strong>License</strong>: MIT<br><strong>Contributions Welcome</strong>: PRs and stars appreciated!</p>
+<hr>
+<p><em>Stop being a human email processor. Let GmailTail turn your inbox into an automation engine.</em></p>
+
+<html>
