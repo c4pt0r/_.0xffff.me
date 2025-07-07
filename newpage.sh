@@ -21,7 +21,7 @@ today=$(date +%Y-%m-%d)
 newfile=$(find pages -type f -name '*.cfg' -print0 | sort -zr | cut -c 7-9 | tail -n2 | awk '{s=$1+1} END {printf "%03d", s}')
 
 cfg_file=pages/$newfile-$filename.cfg
-html_file=pages/$newfile-$filename.html
+md_file=pages/$newfile-$filename.md
 
 echo "filename = $filename.html" > $cfg_file
 echo "title = $title" >> $cfg_file
@@ -30,7 +30,8 @@ echo "keywords = $keywords" >> $cfg_file
 echo "created = $today" >> $cfg_file
 echo "updated = $today" >> $cfg_file
 
-echo "<!DOCTYPE html>" > $html_file
-echo "<html>" >> $html_file
+echo "# $title" > $md_file
+echo "" >> $md_file
+echo "Write your content here..." >> $md_file
 
-echo "Done! Now edit $html_file and $cfg_file"
+echo "Done! Now edit $md_file and $cfg_file"
