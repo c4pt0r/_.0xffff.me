@@ -30,8 +30,6 @@ echo "keywords = $keywords" >> $cfg_file
 echo "created = $today" >> $cfg_file
 echo "updated = $today" >> $cfg_file
 
-echo "# $title" > $md_file
-echo "" >> $md_file
-echo "Write your content here..." >> $md_file
+echo "Write your markdown content here..." > $md_file
 
 echo "Done! Now edit $md_file and $cfg_file"
