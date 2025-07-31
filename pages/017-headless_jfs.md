@@ -1,6 +1,6 @@
 
-1. Go to tidbcloud console and create a new TiDB cluster.
-2. Create a new database named `jfs`
+1. Go to [tidbcloud console](https://tidbcloud.com) and create a new TiDB serverless cluster (free).
+2. Create a new database named jfs
 
 ```
 CREATE DATABASE jfs;
