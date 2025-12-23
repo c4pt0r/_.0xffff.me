@@ -88,7 +88,7 @@ If the second is done well, the third follows naturally.
 
 On the first point: “interfaces describable in natural language” does not mean “support natural language input.” It means: can the intent of your interface be clearly expressed in natural language?
 
-For example, Cloud Code deliberately abandoned traditional GUIs. Why? Because GUIs are often extremely difficult to describe precisely in language. “Click here, drag there, select this state”—once you lose visual context, the interface is almost invisible to agents. Meanwhile, most coding happens in the world of symbols and language.
+For example, Claude Code deliberately abandoned traditional GUIs. Why? Because GUIs are often extremely difficult to describe precisely in language. “Click here, drag there, select this state”—once you lose visual context, the interface is almost invisible to agents. Meanwhile, most coding happens in the world of symbols and language.
 
 There’s also a more practical reason: today’s models are still fundamentally language models. Understanding text is far easier and more reliable than understanding images or implicit interaction states. Agent-friendly interfaces are those whose capabilities can be clearly described in language.
 
