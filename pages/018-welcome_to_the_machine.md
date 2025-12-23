@@ -1,5 +1,7 @@
 Ed Huang | CTO/Co-founder, PingCAP TiDB | December 22, 2025 | h@pingcap.com
 
+---
+
 Just in time for Christmas—here in the U.S., the holiday atmosphere is already everywhere around me. I happen to have a bit of time these days, so I decided to write down a question I’ve been repeatedly thinking about lately.
 
 The main reason is that I’ve been seeing one trend with increasing clarity:
