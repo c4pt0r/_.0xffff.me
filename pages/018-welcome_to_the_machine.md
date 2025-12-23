@@ -1,7 +1,4 @@
-# Welcome to the Machine, Guide to build software for AI agents
-
-* Ed Huang | CTO/Co-founder, PingCAP TiDB | December 22, 2025 | h@pingcap.com*
-
+Ed Huang | CTO/Co-founder, PingCAP TiDB | December 22, 2025 | h@pingcap.com
 
 Just in time for Christmas—here in the U.S., the holiday atmosphere is already everywhere around me. I happen to have a bit of time these days, so I decided to write down a question I’ve been repeatedly thinking about lately.
 
@@ -48,8 +45,10 @@ Documents copied into a vectorfs directory are automatically chunked, embedded, 
 
 grep is no longer just string matching; it becomes semantic similarity search.
 
+```
 $ cp ./docs/* /vectorfs/docs     # auto index / upload to S3 / chunk
 $ grep -r "Does TiDB Support JSON?" /vectorfs/docs  # search over vector index in TiDB
+```
 
 Linux VFS follows the same logic. You can implement a user-space file system with entirely different semantics and a completely different backend. As long as it follows POSIX conventions, it can be mounted into the existing system and immediately become part of it. From the upper layers, nothing has changed; from the system’s perspective, it has gained the ability to evolve continuously.
 
@@ -121,6 +120,7 @@ This isn’t about saving cost; it’s about cognitive density. For example, I r
 
 A better way is to solidify the logic as code:
 
+```
 def enrich_vocab(src, dst, llm_translate):
     with open(src) as f, open(dst, "w") as out:
         for word in map(str.strip, f):
@@ -128,6 +128,7 @@ def enrich_vocab(src, dst, llm_translate):
                 continue
             zh = llm_translate(word)
             out.write(f"{word}\t{zh}\n")
+```
 
 Once the logic is expressed as code, you no longer need to stuff all data into context. The model understands the rule once and applies it to arbitrary-scale data. A small number of symbols describe an infinitely repeatable process. This is why I believe programming is the best meta-tool—and why I dislike the trend of piling on MCP tools.
 
