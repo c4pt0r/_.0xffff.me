@@ -134,11 +134,14 @@ def enrich_vocab(src, dst, llm_translate):
 
 Once the logic is expressed as code, you no longer need to stuff all data into context. The model understands the rule once and applies it to arbitrary-scale data. A small number of symbols describe an infinitely repeatable process. This is why I believe programming is the best meta-tool—and why I dislike the trend of piling on MCP tools.
 
-Required Properties of Infra for Agent Infras
+### Required Properties of Infra for Agent Infras
 
 “Infra for Infra for AI Agents” is a bit awkward as a title, but you know what I mean.
 
 Once AI agents become the primary users of infrastructure, many assumptions we took for granted no longer hold. The user is no longer a carefully planned, long-term human developer, but an agent that creates resources quickly, experiments, discards, and retries—at speeds thousands of times faster than humans.
+
+
+### Disposable workloads matter
 
 Agent workloads are fundamentally disposable. Instant usability, easy creation, and zero-cost failure matter more than long-term stability. Even success is often temporary.
 
@@ -177,7 +180,7 @@ If you can’t do this, agents are forced back into “careful resource usage”
 
 From this perspective, “seemingly exclusive but actually virtualized” design is not an optimization—it’s a prerequisite for scalable, ultra-low-cost agent infrastructure.
 
-### Compute Leverage per job 
+### Measure compute leverage per job 
 
 One topic rarely discussed in agent infrastructure: how much compute can you leverage per job?
 
