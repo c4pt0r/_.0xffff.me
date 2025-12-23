@@ -6,9 +6,9 @@ echo "Converting markdown files to HTML..."
 node convert-md.js
 
 # get saait
-wget https://codemadness.org/releases/saait/saait-0.8.tar.gz
+curl -L -o saait-0.8.tar.gz https://codemadness.org/releases/saait/saait-0.8.tar.gz
 tar zxvf ./saait-0.8.tar.gz
-cd saait-0.8; make; cd .. 
+cd saait-0.8 && make && cd .. 
 
 # check if saait successfuly built
 
