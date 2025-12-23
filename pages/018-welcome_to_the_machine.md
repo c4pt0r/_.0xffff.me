@@ -1,4 +1,4 @@
-Ed Huang | CTO/Co-founder, PingCAP TiDB | December 22, 2025 | h@pingcap.com
+Ed Huang | CTO/Co-founder, PingCAP TiDB | h@pingcap.com
 
 ---
 
