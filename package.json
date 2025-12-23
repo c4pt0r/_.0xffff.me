@@ -1,6 +1,9 @@
 {
   "scripts": {
-        "build": "pushd ./build; sh build.sh; popd"
-    }
+    "build": "pushd ./build; sh build.sh; popd"
+  },
+  "dependencies": {
+    "marked": "^11.1.0"
+  }
 }
 
