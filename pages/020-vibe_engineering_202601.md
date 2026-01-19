@@ -6,7 +6,7 @@ After I introduced OpenCode in my previous article, I received a lot of attentio
 
 You may notice that I deliberately avoid using the term “Vibe Coding.” That’s because the focus at this point is no longer just on code, but on things at a higher level. Also, I’ll try to keep the “AI content” in this article under 5%, so feel free to read it without pressure.
 
-As a quick update: the TiDB PostgreSQL rewrite project I mentioned last time is no longer a toy. A few days ago, while traveling for work on a long flight with no internet, I did a careful review of the code. There are some rough edges, but overall the quality is already very high. In my view, it’s close to production-level Rust code, which is very different from what I used to consider an “early prototype.”
+As a quick update: my TiDB PostgreSQL rewrite project I mentioned last time is no longer a toy. A few days ago, while traveling for work on a long flight with no internet, I did a careful review of the code. There are some rough edges, but overall the quality is already very high. In my view, it’s close to production-level Rust code, which is very different from what I used to consider an “early prototype.”
 
 By the way, choosing Rust from day one was absolutely the right decision. Rust’s rigor makes it easier for AI to write infrastructure code that is much closer to being bug-free. In contrast, another project of mine, agfs, uses Python for its shell and built-in scripting language (ascript). As the project grew, maintainability dropped sharply, and at that point rewriting it became extremely difficult, so we could only refactor slowly and painfully. So now that it’s already 2026, if you’re starting a new backend infrastructure project, Rust should be your first choice.
 
