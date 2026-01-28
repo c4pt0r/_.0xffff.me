@@ -2,8 +2,6 @@ Ed Huang | CTO/Co-founder, PingCAP TiDB | h@pingcap.com
 
 ---
 
-## What We Talk About When We Talk About Agent Infra
-
 Agent infrastructure is, without question, one of the hottest areas for VC investment right now. I'm personally placing bets here as well—but unlike most VCs, I approach this space as an infrastructure user and builder. From that perspective, I want to examine a simple but often overlooked question: When we talk about *Agent Infra*, what are we actually talking about?
 
 ---
