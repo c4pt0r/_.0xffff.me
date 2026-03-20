@@ -18,10 +18,12 @@
 <p>Most stacks split these across object storage + DB + vector DB + queue, then glue them in application code. db9’s model is simpler: <strong>files + Postgres, unified by SQL</strong>.</p>
 <h2>1) Files are not blobs: they participate in SQL</h2>
 <p>Minimal examples:</p>
-<pre><code class="language-sql">-- write/read/inspect an artifact
-select fs9_write(&#39;/reports/hello.txt&#39;, &#39;hello from db9&#39;);
-select fs9_read(&#39;/reports/hello.txt&#39;);
-select fs9_exists(&#39;/reports/hello.txt&#39;), fs9_size(&#39;/reports/hello.txt&#39;);
+<pre><code class="language-sql">create extension if not exists fs9;
+
+-- write/read/inspect an artifact
+select extensions.fs9_write(&#39;/reports/hello.txt&#39;, &#39;hello from db9&#39;);
+select extensions.fs9_read(&#39;/reports/hello.txt&#39;);
+select extensions.fs9_exists(&#39;/reports/hello.txt&#39;), extensions.fs9_size(&#39;/reports/hello.txt&#39;);
 
 -- treat files as query sources
 select * from extensions.fs9(&#39;/data/users.csv&#39;) limit 5;
@@ -79,7 +81,7 @@ order by ts_rank_cd(search_vector, plainto_tsquery(&#39;english&#39;, &#39;files
 limit 8;
 </code></pre>
 <h3>(Optional) Semantic retrieval with built-in embeddings</h3>
-<p>If you want embeddings, db9 supports server-side generation via <code>embedding()</code> (no separate embedding service).</p>
+<p>If you want embeddings, db9 supports server-side generation via <code>embedding()</code> (no separate embedding service). <em>(Per db9 docs, <code>embedding()</code> typically requires admin/superuser permissions.)</em></p>
 <pre><code class="language-sql">create extension if not exists embedding;
 create extension if not exists vector;
 
@@ -110,14 +112,14 @@ limit 8;
   created_at timestamptz not null default now()
 );
 
-select fs9_write(&#39;/reports/agents-fs.md&#39;, &#39;# Notes\n\n...generated summary...\n&#39;);
+select extensions.fs9_write(&#39;/reports/agents-fs.md&#39;, &#39;# Notes\n\n...generated summary...\n&#39;);
 
 insert into artifacts (path, kind, meta)
 values (&#39;/reports/agents-fs.md&#39;, &#39;report&#39;, &#39;{&quot;inputs&quot;:[&quot;/docs/agents/*.md&quot;]}&#39;::jsonb)
 on conflict (path) do update
 set meta = excluded.meta;
 
-select a.path, fs9_read(a.path)
+select a.path, extensions.fs9_read(a.path)
 from artifacts a
 where a.kind = &#39;report&#39;
 order by a.created_at desc

@@ -21,10 +21,12 @@ Most stacks split these across object storage + DB + vector DB + queue, then glu
 Minimal examples:
 
 ```sql
+create extension if not exists fs9;
+
 -- write/read/inspect an artifact
-select fs9_write('/reports/hello.txt', 'hello from db9');
-select fs9_read('/reports/hello.txt');
-select fs9_exists('/reports/hello.txt'), fs9_size('/reports/hello.txt');
+select extensions.fs9_write('/reports/hello.txt', 'hello from db9');
+select extensions.fs9_read('/reports/hello.txt');
+select extensions.fs9_exists('/reports/hello.txt'), extensions.fs9_size('/reports/hello.txt');
 
 -- treat files as query sources
 select * from extensions.fs9('/data/users.csv') limit 5;
@@ -94,7 +96,7 @@ limit 8;
 ```
 
 ### (Optional) Semantic retrieval with built-in embeddings
-If you want embeddings, db9 supports server-side generation via `embedding()` (no separate embedding service).
+If you want embeddings, db9 supports server-side generation via `embedding()` (no separate embedding service). *(Per db9 docs, `embedding()` typically requires admin/superuser permissions.)*
 
 ```sql
 create extension if not exists embedding;
@@ -131,14 +133,14 @@ create table if not exists artifacts (
   created_at timestamptz not null default now()
 );
 
-select fs9_write('/reports/agents-fs.md', '# Notes\n\n...generated summary...\n');
+select extensions.fs9_write('/reports/agents-fs.md', '# Notes\n\n...generated summary...\n');
 
 insert into artifacts (path, kind, meta)
 values ('/reports/agents-fs.md', 'report', '{"inputs":["/docs/agents/*.md"]}'::jsonb)
 on conflict (path) do update
 set meta = excluded.meta;
 
-select a.path, fs9_read(a.path)
+select a.path, extensions.fs9_read(a.path)
 from artifacts a
 where a.kind = 'report'
 order by a.created_at desc
