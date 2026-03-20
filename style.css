@@ -57,15 +57,23 @@ table tr td {
 pre {
 	margin: 0;
 }
+
+/* Inline code */
 code {
 	background-color: #eee;
-	display: block;
 	font-family: monospace;
+	padding: 0.15em 0.35em;
+	word-wrap: normal;
+}
+
+/* Code blocks */
+pre code {
+	display: block;
 	overflow-x: auto;
 	padding: 10px;
-    margin-top: 5px;
-    margin-bottom: 5px;
-	word-wrap: normal;
+	margin-top: 5px;
+	margin-bottom: 5px;
+	white-space: pre;
 }
 #menu td {
 	padding: 1ex 0;
@@ -93,7 +101,6 @@ code {
 	}
 	code {
 		background-color: #111;
-		border-color: #222;
 	}
 	hr {
 		border-color: #222;
