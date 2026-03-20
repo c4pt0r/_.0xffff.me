@@ -47,11 +47,19 @@ where line-&gt;&gt;&#39;level&#39; = &#39;error&#39;;
   primary key (path, chunk_idx)
 );
 </code></pre>
-<p>Ingest (pseudo-SQL: exact chunking helper may differ by environment):</p>
-<pre><code class="language-sql">-- conceptually: chunk file content, then upsert
-insert into doc_chunks (path, chunk_idx, content, meta)
-select &#39;/docs/agents/intro.md&#39;, c.chunk_index, c.chunk_text, &#39;{&quot;source&quot;:&quot;docs&quot;}&#39;::jsonb
-from CHUNK_TEXT(fs9_read(&#39;/docs/agents/intro.md&#39;)) c
+<p>Chunking in db9 is built-in: <code>CHUNK_TEXT(content, max_chars, overlap_chars, title)</code> is markdown-aware and prefers natural breakpoints.</p>
+<pre><code class="language-sql">insert into doc_chunks (path, chunk_idx, content, meta)
+select
+  &#39;/docs/agents/intro.md&#39; as path,
+  c.chunk_index as chunk_idx,
+  c.chunk_text as content,
+  jsonb_build_object(&#39;source&#39;,&#39;docs&#39;,&#39;chunk_pos&#39;,c.chunk_pos)
+from CHUNK_TEXT(
+  content =&gt; extensions.fs9_read(&#39;/docs/agents/intro.md&#39;),
+  max_chars =&gt; 3600,
+  overlap_chars =&gt; 540,
+  title =&gt; &#39;agents/intro&#39;
+) as c
 on conflict (path, chunk_idx) do update
 set content = excluded.content,
     meta = excluded.meta;
@@ -75,15 +83,20 @@ limit 8;
 <pre><code class="language-sql">create extension if not exists embedding;
 create extension if not exists vector;
 
+-- default model returns 1024-d vectors
 alter table doc_chunks add column if not exists vec vector(1024);
-update doc_chunks set vec = embedding(content)::vector(1024) where vec is null;
 
+update doc_chunks
+set vec = embedding(content)::vector(1024)
+where vec is null;
+
+-- cosine distance (lower = more similar)
 select path, chunk_idx, content
 from doc_chunks
 order by vec &lt;=&gt; embedding(&#39;how do agents use filesystem + postgres?&#39;)::vector(1024)
 limit 8;
 
--- or: auto-embed distance helpers
+-- convenience helpers: auto-embed the query text
 select path, chunk_idx, content
 from doc_chunks
 order by VEC_EMBED_COSINE_DISTANCE(vec, &#39;how do agents use filesystem + postgres?&#39;)

@@ -56,13 +56,21 @@ create table if not exists doc_chunks (
 );
 ```
 
-Ingest (pseudo-SQL: exact chunking helper may differ by environment):
+Chunking in db9 is built-in: `CHUNK_TEXT(content, max_chars, overlap_chars, title)` is markdown-aware and prefers natural breakpoints.
 
 ```sql
--- conceptually: chunk file content, then upsert
 insert into doc_chunks (path, chunk_idx, content, meta)
-select '/docs/agents/intro.md', c.chunk_index, c.chunk_text, '{"source":"docs"}'::jsonb
-from CHUNK_TEXT(fs9_read('/docs/agents/intro.md')) c
+select
+  '/docs/agents/intro.md' as path,
+  c.chunk_index as chunk_idx,
+  c.chunk_text as content,
+  jsonb_build_object('source','docs','chunk_pos',c.chunk_pos)
+from CHUNK_TEXT(
+  content => extensions.fs9_read('/docs/agents/intro.md'),
+  max_chars => 3600,
+  overlap_chars => 540,
+  title => 'agents/intro'
+) as c
 on conflict (path, chunk_idx) do update
 set content = excluded.content,
     meta = excluded.meta;
@@ -92,15 +100,20 @@ If you want embeddings, db9 supports server-side generation via `embedding()` (n
 create extension if not exists embedding;
 create extension if not exists vector;
 
+-- default model returns 1024-d vectors
 alter table doc_chunks add column if not exists vec vector(1024);
-update doc_chunks set vec = embedding(content)::vector(1024) where vec is null;
 
+update doc_chunks
+set vec = embedding(content)::vector(1024)
+where vec is null;
+
+-- cosine distance (lower = more similar)
 select path, chunk_idx, content
 from doc_chunks
 order by vec <=> embedding('how do agents use filesystem + postgres?')::vector(1024)
 limit 8;
 
--- or: auto-embed distance helpers
+-- convenience helpers: auto-embed the query text
 select path, chunk_idx, content
 from doc_chunks
 order by VEC_EMBED_COSINE_DISTANCE(vec, 'how do agents use filesystem + postgres?')
