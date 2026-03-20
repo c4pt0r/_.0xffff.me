@@ -1,126 +1,91 @@
 <!DOCTYPE html>
 <html>
-<p>This is the practical case for combining filesystem artifacts with Postgres state in one runtime (db9-style).</p>
+<p>This is a practical, db9-flavored pattern for building agent workflows where <strong>artifacts stay as files</strong> but <strong>state stays queryable</strong>.</p>
+<h2>What db9 is (the 20-second version)</h2>
+<p>db9 is a Postgres-based environment that also gives you a filesystem API, so you can:</p>
+<ul>
+<li>keep agent outputs as <strong>real files</strong> (logs/markdown/diffs)</li>
+<li>keep indexes and governance as <strong>tables</strong> (JSONB, FTS, vectors, constraints)</li>
+<li>use <strong>SQL as the glue</strong> (filter/join/rank/dedup) without writing glue code</li>
+</ul>
+<p>The key bridge is <strong>fs9</strong>: it can expose files (CSV/JSONL/etc.) as relations.</p>
+<h2>The core idea</h2>
 <p>Agent systems accumulate two kinds of state:</p>
 <ul>
-<li><strong>Artifacts</strong> (file-shaped): prompts, plans, logs, traces, cached responses, patches, reports.</li>
-<li><strong>Queryable state</strong> (table-shaped): metadata, dedup keys, chunk indexes, run status, schedules.</li>
+<li><strong>Artifacts (file-shaped):</strong> prompts, plans, logs, traces, cached responses, patches, reports.</li>
+<li><strong>Queryable state (table-shaped):</strong> metadata, dedup keys, chunk indexes, run status.</li>
 </ul>
-<p>Most stacks split these across object storage + DB + vector DB + a queue, then glue them together in application code. That works, but inspection/debugging becomes slow and expensive.</p>
-<p><strong>db9’s model is: keep artifacts as files, keep structure in Postgres, and let SQL operate across both.</strong></p>
+<p>Most stacks split these across object storage + DB + vector DB + queue, then glue them in application code. db9’s model is simpler: <strong>files + Postgres, unified by SQL</strong>.</p>
 <h2>1) Files are not blobs: they participate in SQL</h2>
-<p>Write and read artifacts directly:</p>
-<pre><code class="language-sql">select fs9_write(&#39;/reports/hello.txt&#39;, &#39;hello from db9&#39;);
+<p>Minimal examples:</p>
+<pre><code class="language-sql">-- write/read/inspect an artifact
+select fs9_write(&#39;/reports/hello.txt&#39;, &#39;hello from db9&#39;);
 select fs9_read(&#39;/reports/hello.txt&#39;);
 select fs9_exists(&#39;/reports/hello.txt&#39;), fs9_size(&#39;/reports/hello.txt&#39;);
-</code></pre>
-<p>Turn common formats into relations via <strong>fs9</strong>:</p>
-<pre><code class="language-sql">-- CSV as a table
-select * from extensions.fs9(&#39;/data/users.csv&#39;) limit 5;
 
--- JSONL logs (assuming `line` is json)
+-- treat files as query sources
+select * from extensions.fs9(&#39;/data/users.csv&#39;) limit 5;
 select _line_number, line
 from extensions.fs9(&#39;/logs/run.jsonl&#39;)
 where line-&gt;&gt;&#39;level&#39; = &#39;error&#39;;
 </code></pre>
-<p>Once files can be queried as relations, you can build pipelines where artifacts remain inspectable files, but the “working index” lives in Postgres.</p>
-<h2>2) A minimal end-to-end pipeline (docs → chunks → retrieval → report)</h2>
-<p>Below is a compact RAG-ish workflow that uses <strong>files for source + output</strong>, and <strong>tables for indexing + retrieval</strong>.</p>
-<h3>Step A — Drop source docs as files</h3>
-<p>Assume you upload markdown files into something like:</p>
+<p>Once files are queryable as relations, “debugging” stops being a bespoke UI problem. It becomes SQL.</p>
+<h2>2) A compact pipeline (docs → chunks → retrieval → report)</h2>
+<p>This is the minimal RAG-ish loop: <strong>files for source + output</strong>, <strong>tables for indexing + retrieval</strong>.</p>
+<h3>Step A — Source docs live as files</h3>
+<p>Example layout:</p>
 <ul>
 <li><code>/docs/agents/*.md</code></li>
 </ul>
-<p>(How you upload doesn’t matter; the point is the source remains a file.)</p>
-<h3>Step B — Chunk into a table (the compute layer)</h3>
-<p>Create a chunk table with metadata. Keep it boring and queryable.</p>
+<h3>Step B — Materialize a chunk index in Postgres</h3>
+<p>Keep the table boring (that’s the point):</p>
 <pre><code class="language-sql">create table if not exists doc_chunks (
-  id bigserial primary key,
   path text not null,
   chunk_idx int not null,
   content text not null,
   meta jsonb not null default &#39;{}&#39;,
-  created_at timestamptz not null default now(),
-  unique (path, chunk_idx)
+  primary key (path, chunk_idx)
 );
-
-create index if not exists doc_chunks_path_idx on doc_chunks(path);
-create index if not exists doc_chunks_meta_gin on doc_chunks using gin(meta);
 </code></pre>
-<p>Now ingest chunks from the filesystem. The exact chunking function name may vary by environment; conceptually:</p>
-<pre><code class="language-sql">-- PSEUDO-SQL: replace CHUNK_TEXT / fs9_read with your actual db9 functions
+<p>Ingest (pseudo-SQL: exact chunking helper may differ by environment):</p>
+<pre><code class="language-sql">-- conceptually: chunk file content, then upsert
 insert into doc_chunks (path, chunk_idx, content, meta)
-select
-  &#39;/docs/agents/intro.md&#39; as path,
-  c.chunk_index,
-  c.chunk_text,
-  jsonb_build_object(&#39;kind&#39;,&#39;md&#39;,&#39;source&#39;,&#39;docs&#39;)
+select &#39;/docs/agents/intro.md&#39;, c.chunk_index, c.chunk_text, &#39;{&quot;source&quot;:&quot;docs&quot;}&#39;::jsonb
 from CHUNK_TEXT(fs9_read(&#39;/docs/agents/intro.md&#39;)) c
 on conflict (path, chunk_idx) do update
 set content = excluded.content,
     meta = excluded.meta;
 </code></pre>
-<p>This is the important point: <strong>source stays a file</strong>, but you materialize a query index as a table.</p>
-<h3>Step C — Add full-text search (cheap, debuggable, good enough)</h3>
-<p>Embeddings are optional on day one. FTS gives you fast iteration.</p>
+<h3>Step C — Retrieval with FTS (fast, debuggable)</h3>
 <pre><code class="language-sql">alter table doc_chunks
 add column if not exists search_vector tsvector
 generated always as (to_tsvector(&#39;english&#39;, coalesce(content, &#39;&#39;))) stored;
 
 create index if not exists doc_chunks_search_gin
 on doc_chunks using gin(search_vector);
-</code></pre>
-<p>Retrieve:</p>
-<pre><code class="language-sql">select path, chunk_idx, content,
-       ts_rank_cd(search_vector, plainto_tsquery(&#39;english&#39;, &#39;filesystem sql agents&#39;)) as score
-from doc_chunks
-where search_vector @@ plainto_tsquery(&#39;english&#39;, &#39;filesystem sql agents&#39;)
-order by score desc
-limit 8;
-</code></pre>
-<h3>Step D — (Optional) Add embeddings for semantic retrieval</h3>
-<p>If your environment supports an embedding function, store vectors per chunk.</p>
-<pre><code class="language-sql">-- Optional: requires a vector type + embedding function
-alter table doc_chunks add column if not exists embedding vector;
 
--- PSEUDO-SQL: replace EMBED_TEXT(model, text) with your function
-update doc_chunks
-set embedding = EMBED_TEXT(&#39;titan-v2&#39;, content)
-where embedding is null;
-
--- Similarity search (PSEUDO-SQL for operator)
 select path, chunk_idx, content
 from doc_chunks
-order by embedding &lt;=&gt; EMBED_TEXT(&#39;titan-v2&#39;, &#39;how do agents use filesystem + postgres?&#39;)
+where search_vector @@ plainto_tsquery(&#39;english&#39;, &#39;filesystem sql agents&#39;)
+order by ts_rank_cd(search_vector, plainto_tsquery(&#39;english&#39;, &#39;filesystem sql agents&#39;)) desc
 limit 8;
 </code></pre>
-<p>The point is not the specific model/operator. The point is: <strong>it’s still Postgres + SQL</strong>, not a separate vector service.</p>
-<h3>Step E — Write the output report back as a file</h3>
-<p>Generated output is an artifact. Keep it as a file and register it.</p>
+<p><em>(If you have embeddings, add a vector column and do semantic retrieval in the same table. That’s an optimization, not a prerequisite.)</em></p>
+<h3>Step D — Write the answer as a file, track it as a row</h3>
 <pre><code class="language-sql">create table if not exists artifacts (
-  id bigserial primary key,
-  path text not null unique,
+  path text primary key,
   kind text not null,
   meta jsonb not null default &#39;{}&#39;,
   created_at timestamptz not null default now()
 );
 
--- Write report
-select fs9_write(
-  &#39;/reports/agents-fs.md&#39;,
-  &#39;# Notes\n\n...generated summary here...\n&#39;
-);
+select fs9_write(&#39;/reports/agents-fs.md&#39;, &#39;# Notes\n\n...generated summary...\n&#39;);
 
 insert into artifacts (path, kind, meta)
-values (
-  &#39;/reports/agents-fs.md&#39;,
-  &#39;report&#39;,
-  &#39;{&quot;topic&quot;:&quot;agents&quot;,&quot;inputs&quot;:[&quot;/docs/agents/*.md&quot;]}&#39;
-)
+values (&#39;/reports/agents-fs.md&#39;, &#39;report&#39;, &#39;{&quot;inputs&quot;:[&quot;/docs/agents/*.md&quot;]}&#39;::jsonb)
 on conflict (path) do update
 set meta = excluded.meta;
 
--- Query latest report + read it
 select a.path, fs9_read(a.path)
 from artifacts a
 where a.kind = &#39;report&#39;
@@ -129,10 +94,10 @@ limit 1;
 </code></pre>
 <h2>Why this composition works</h2>
 <ul>
-<li><strong>Files</strong> remain the honest, inspectable artifacts (inputs, outputs, traces).</li>
-<li><strong>Tables</strong> hold the query index and governance state.</li>
-<li><strong>SQL</strong> does the filtering, joins, ranking, dedup, and scheduling close to the data.</li>
+<li><strong>Files</strong> keep artifacts transparent and inspectable.</li>
+<li><strong>Tables</strong> keep structure queryable and enforceable.</li>
+<li><strong>SQL</strong> is the workflow language (filter/join/rank/dedup) close to the data.</li>
 </ul>
-<p>This isn’t about “agents love X”. It’s about making an agent runtime <strong>operable</strong>: you can inspect every artifact, and you can query every decision.</p>
+<p>That’s the operational win: agent state stays visible, and the “why did it do that?” questions become answerable with SQL.</p>
 
 </html>
