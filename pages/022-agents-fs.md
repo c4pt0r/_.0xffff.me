@@ -1,13 +1,13 @@
 This is a practical, db9-flavored pattern for building agent workflows where **artifacts stay as files** but **state stays queryable**.
 
 ## What db9 is (the 20-second version)
-db9 is a Postgres-based environment that also gives you a filesystem API, so you can:
+db9 is PostgreSQL (wire-compatible) plus a set of compiled-in extensions aimed at agent workloads:
 
-- keep agent outputs as **real files** (logs/markdown/diffs)
-- keep indexes and governance as **tables** (JSONB, FTS, vectors, constraints)
-- use **SQL as the glue** (filter/join/rank/dedup) without writing glue code
+- **fs9**: query/read/write files from SQL, and expose CSV/JSONL/Parquet as relations
+- **embedding + vector**: generate embeddings server-side with `embedding()` and search with pgvector operators + HNSW
+- **http + pg_cron + branching**: API calls, scheduling, and safe experiments (all close to the data)
 
-The key bridge is **fs9**: it can expose files (CSV/JSONL/etc.) as relations.
+In practice: keep agent outputs as **real files** (logs/markdown/diffs), keep indexes/governance as **tables** (JSONB/FTS/vectors), and use **SQL as the glue**.
 
 ## The core idea
 Agent systems accumulate two kinds of state:
@@ -85,7 +85,28 @@ order by ts_rank_cd(search_vector, plainto_tsquery('english', 'filesystem sql ag
 limit 8;
 ```
 
-*(If you have embeddings, add a vector column and do semantic retrieval in the same table. That’s an optimization, not a prerequisite.)*
+### (Optional) Semantic retrieval with built-in embeddings
+If you want embeddings, db9 supports server-side generation via `embedding()` (no separate embedding service).
+
+```sql
+create extension if not exists embedding;
+create extension if not exists vector;
+
+alter table doc_chunks add column if not exists vec vector(1024);
+update doc_chunks set vec = embedding(content)::vector(1024) where vec is null;
+
+select path, chunk_idx, content
+from doc_chunks
+order by vec <=> embedding('how do agents use filesystem + postgres?')::vector(1024)
+limit 8;
+
+-- or: auto-embed distance helpers
+select path, chunk_idx, content
+from doc_chunks
+order by VEC_EMBED_COSINE_DISTANCE(vec, 'how do agents use filesystem + postgres?')
+limit 8;
+```
+
 
 ### Step D — Write the answer as a file, track it as a row
 

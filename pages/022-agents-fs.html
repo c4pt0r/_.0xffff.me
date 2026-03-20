@@ -2,13 +2,13 @@
 <html>
 <p>This is a practical, db9-flavored pattern for building agent workflows where <strong>artifacts stay as files</strong> but <strong>state stays queryable</strong>.</p>
 <h2>What db9 is (the 20-second version)</h2>
-<p>db9 is a Postgres-based environment that also gives you a filesystem API, so you can:</p>
+<p>db9 is PostgreSQL (wire-compatible) plus a set of compiled-in extensions aimed at agent workloads:</p>
 <ul>
-<li>keep agent outputs as <strong>real files</strong> (logs/markdown/diffs)</li>
-<li>keep indexes and governance as <strong>tables</strong> (JSONB, FTS, vectors, constraints)</li>
-<li>use <strong>SQL as the glue</strong> (filter/join/rank/dedup) without writing glue code</li>
+<li><strong>fs9</strong>: query/read/write files from SQL, and expose CSV/JSONL/Parquet as relations</li>
+<li><strong>embedding + vector</strong>: generate embeddings server-side with <code>embedding()</code> and search with pgvector operators + HNSW</li>
+<li><strong>http + pg_cron + branching</strong>: API calls, scheduling, and safe experiments (all close to the data)</li>
 </ul>
-<p>The key bridge is <strong>fs9</strong>: it can expose files (CSV/JSONL/etc.) as relations.</p>
+<p>In practice: keep agent outputs as <strong>real files</strong> (logs/markdown/diffs), keep indexes/governance as <strong>tables</strong> (JSONB/FTS/vectors), and use <strong>SQL as the glue</strong>.</p>
 <h2>The core idea</h2>
 <p>Agent systems accumulate two kinds of state:</p>
 <ul>
@@ -70,7 +70,25 @@ where search_vector @@ plainto_tsquery(&#39;english&#39;, &#39;filesystem sql ag
 order by ts_rank_cd(search_vector, plainto_tsquery(&#39;english&#39;, &#39;filesystem sql agents&#39;)) desc
 limit 8;
 </code></pre>
-<p><em>(If you have embeddings, add a vector column and do semantic retrieval in the same table. That’s an optimization, not a prerequisite.)</em></p>
+<h3>(Optional) Semantic retrieval with built-in embeddings</h3>
+<p>If you want embeddings, db9 supports server-side generation via <code>embedding()</code> (no separate embedding service).</p>
+<pre><code class="language-sql">create extension if not exists embedding;
+create extension if not exists vector;
+
+alter table doc_chunks add column if not exists vec vector(1024);
+update doc_chunks set vec = embedding(content)::vector(1024) where vec is null;
+
+select path, chunk_idx, content
+from doc_chunks
+order by vec &lt;=&gt; embedding(&#39;how do agents use filesystem + postgres?&#39;)::vector(1024)
+limit 8;
+
+-- or: auto-embed distance helpers
+select path, chunk_idx, content
+from doc_chunks
+order by VEC_EMBED_COSINE_DISTANCE(vec, &#39;how do agents use filesystem + postgres?&#39;)
+limit 8;
+</code></pre>
 <h3>Step D — Write the answer as a file, track it as a row</h3>
 <pre><code class="language-sql">create table if not exists artifacts (
   path text primary key,
