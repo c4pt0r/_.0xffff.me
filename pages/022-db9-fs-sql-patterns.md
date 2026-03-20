@@ -41,9 +41,22 @@ Once files are queryable as relations, “debugging” stops being a bespoke UI 
 This is the minimal RAG-ish loop: **files for source + output**, **tables for indexing + retrieval**.
 
 ### Step A — Source docs live as files
-Example layout:
+If you already have docs, great. If you want this to be copy/paste runnable, just write a tiny markdown doc into the db9 filesystem first:
 
-- `/docs/agents/*.md`
+```sql
+create extension if not exists fs9;
+
+select extensions.fs9_write(
+  '/docs/agents/intro.md',
+  $$
+# Agents + Files + SQL
+
+Agents produce artifacts (plans/logs/reports). Files are the natural format.
+
+Postgres turns this into a computable system: query, rank, dedup, schedule.
+  $$
+);
+```
 
 ### Step B — Materialize a chunk index in Postgres
 Keep the table boring (that’s the point):
@@ -133,10 +146,10 @@ create table if not exists artifacts (
   created_at timestamptz not null default now()
 );
 
-select extensions.fs9_write('/reports/agents-fs.md', '# Notes\n\n...generated summary...\n');
+select extensions.fs9_write('/reports/db9-fs-sql-patterns.md', '# Notes\n\n...generated summary...\n');
 
 insert into artifacts (path, kind, meta)
-values ('/reports/agents-fs.md', 'report', '{"inputs":["/docs/agents/*.md"]}'::jsonb)
+values ('/reports/db9-fs-sql-patterns.md', 'report', '{"inputs":["/docs/agents/intro.md"]}'::jsonb)
 on conflict (path) do update
 set meta = excluded.meta;
 

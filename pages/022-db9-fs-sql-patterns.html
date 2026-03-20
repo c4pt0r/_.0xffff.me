@@ -1,3 +1,5 @@
+<!DOCTYPE html>
+<html>
 <p>This is a practical, db9-flavored pattern for building agent workflows where <strong>artifacts stay as files</strong> but <strong>state stays queryable</strong>.</p>
 <h2>What db9 is (the 20-second version)</h2>
 <p>db9 is PostgreSQL (wire-compatible) plus a set of compiled-in extensions aimed at agent workloads:</p>
@@ -33,10 +35,20 @@ where line-&gt;&gt;&#39;level&#39; = &#39;error&#39;;
 <h2>2) A compact pipeline (docs → chunks → retrieval → report)</h2>
 <p>This is the minimal RAG-ish loop: <strong>files for source + output</strong>, <strong>tables for indexing + retrieval</strong>.</p>
 <h3>Step A — Source docs live as files</h3>
-<p>Example layout:</p>
-<ul>
-<li><code>/docs/agents/*.md</code></li>
-</ul>
+<p>If you already have docs, great. If you want this to be copy/paste runnable, just write a tiny markdown doc into the db9 filesystem first:</p>
+<pre><code class="language-sql">create extension if not exists fs9;
+
+select extensions.fs9_write(
+  &#39;/docs/agents/intro.md&#39;,
+  $$
+# Agents + Files + SQL
+
+Agents produce artifacts (plans/logs/reports). Files are the natural format.
+
+Postgres turns this into a computable system: query, rank, dedup, schedule.
+  $$
+);
+</code></pre>
 <h3>Step B — Materialize a chunk index in Postgres</h3>
 <p>Keep the table boring (that’s the point):</p>
 <pre><code class="language-sql">create table if not exists doc_chunks (
@@ -110,10 +122,10 @@ limit 8;
   created_at timestamptz not null default now()
 );
 
-select extensions.fs9_write(&#39;/reports/agents-fs.md&#39;, &#39;# Notes\n\n...generated summary...\n&#39;);
+select extensions.fs9_write(&#39;/reports/db9-fs-sql-patterns.md&#39;, &#39;# Notes\n\n...generated summary...\n&#39;);
 
 insert into artifacts (path, kind, meta)
-values (&#39;/reports/agents-fs.md&#39;, &#39;report&#39;, &#39;{&quot;inputs&quot;:[&quot;/docs/agents/*.md&quot;]}&#39;::jsonb)
+values (&#39;/reports/db9-fs-sql-patterns.md&#39;, &#39;report&#39;, &#39;{&quot;inputs&quot;:[&quot;/docs/agents/intro.md&quot;]}&#39;::jsonb)
 on conflict (path) do update
 set meta = excluded.meta;
 
@@ -131,3 +143,4 @@ limit 1;
 </ul>
 <p>That’s the operational win: agent state stays visible, and the “why did it do that?” questions become answerable with SQL.</p>
 
+</html>
