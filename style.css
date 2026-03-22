@@ -67,14 +67,17 @@ code {
 pre {
 	margin: 0;
 }
+pre {
+	overflow-x: auto; /* scrollbar should belong to <pre>, not <code> */
+	border-radius: 10px;
+}
 pre code {
 	display: block;
-	overflow-x: auto;
+	overflow: visible;
 	padding: 12px 14px;
 	margin-top: 6px;
 	margin-bottom: 6px;
 	white-space: pre;
-	border-radius: 10px;
 }
 
 /* Prism plugins: toolbar + line numbers */
@@ -176,44 +179,44 @@ div.code-toolbar:hover > .toolbar {
 }
 
 /* Pretty horizontal scrollbar for code blocks */
-pre code {
+pre {
 	scrollbar-gutter: stable both-edges; /* avoid layout shift */
 }
 
 /* Firefox */
-pre code {
+pre {
 	scrollbar-width: thin;
 	scrollbar-color: #666 #111;
 }
 
 /* WebKit (Chrome/Safari/Edge) */
-pre code::-webkit-scrollbar {
+pre::-webkit-scrollbar {
 	height: 8px;
 }
-pre code::-webkit-scrollbar-track {
+pre::-webkit-scrollbar-track {
 	background: #111;
 	border-radius: 999px;
 }
-pre code::-webkit-scrollbar-thumb {
+pre::-webkit-scrollbar-thumb {
 	background: #555;
 	border-radius: 999px;
 	border: 2px solid #111;
 }
-pre code::-webkit-scrollbar-thumb:hover {
+pre::-webkit-scrollbar-thumb:hover {
 	background: #777;
 }
 
 /* Light theme overrides */
-.light-theme pre code {
+.light-theme pre {
 	scrollbar-color: #999 #eee;
 }
-.light-theme pre code::-webkit-scrollbar-track {
+.light-theme pre::-webkit-scrollbar-track {
 	background: #eee;
 }
-.light-theme pre code::-webkit-scrollbar-thumb {
+.light-theme pre::-webkit-scrollbar-thumb {
 	background: #bbb;
 	border-color: #eee;
 }
-.light-theme pre code::-webkit-scrollbar-thumb:hover {
+.light-theme pre::-webkit-scrollbar-thumb:hover {
 	background: #999;
 }
