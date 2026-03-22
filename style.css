@@ -89,6 +89,18 @@ pre.line-numbers > code {
 }
 pre[class*="language-"] {
 	position: relative;
+	/* Prism themes often style <pre> directly (background/border/padding).
+	   We want the visuals on `pre code` instead, so kill the outer frame. */
+	background: transparent !important;
+	border: 0 !important;
+	box-shadow: none !important;
+	padding: 0 !important;
+}
+
+div.code-toolbar > pre[class*="language-"] {
+	background: transparent !important;
+	border: 0 !important;
+	box-shadow: none !important;
 }
 div.code-toolbar > .toolbar {
 	opacity: 0.75;
