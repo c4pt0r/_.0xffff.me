@@ -102,11 +102,41 @@ div.code-toolbar > pre[class*="language-"] {
 	border: 0 !important;
 	box-shadow: none !important;
 }
+/* Prism toolbar container: remove the outer gray frame/padding */
+div.code-toolbar {
+	background: transparent !important;
+	padding: 0 !important;
+	margin: 0 !important;
+}
+
 div.code-toolbar > .toolbar {
 	opacity: 0.75;
+	position: absolute;
+	top: 6px;
+	right: 6px;
 }
 div.code-toolbar:hover > .toolbar {
 	opacity: 1;
+}
+
+/* Make the Copy button less ugly */
+div.code-toolbar > .toolbar .toolbar-item > button,
+div.code-toolbar > .toolbar .toolbar-item > a,
+div.code-toolbar > .toolbar .toolbar-item > span {
+	background: rgba(0,0,0,0.35) !important;
+	color: #e6edf3 !important;
+	border: 1px solid rgba(255,255,255,0.12) !important;
+	border-radius: 999px !important;
+	padding: 2px 8px !important;
+	font-size: 12px !important;
+	line-height: 1.4 !important;
+}
+.light-theme div.code-toolbar > .toolbar .toolbar-item > button,
+.light-theme div.code-toolbar > .toolbar .toolbar-item > a,
+.light-theme div.code-toolbar > .toolbar .toolbar-item > span {
+	background: rgba(255,255,255,0.75) !important;
+	color: #111 !important;
+	border: 1px solid rgba(0,0,0,0.12) !important;
 }
 
 #menu td {
