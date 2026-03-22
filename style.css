@@ -70,14 +70,18 @@ pre {
 pre {
 	overflow-x: auto; /* scrollbar should belong to <pre>, not <code> */
 	border-radius: 10px;
+	padding: 12px 14px;
+	margin-top: 6px;
+	margin-bottom: 6px;
 }
 pre code {
 	display: block;
 	overflow: visible;
-	padding: 12px 14px;
-	margin-top: 6px;
-	margin-bottom: 6px;
+	padding: 0;
 	white-space: pre;
+	background: transparent;
+	min-width: 100%;
+	box-sizing: border-box;
 }
 
 /* Prism plugins: toolbar + line numbers */
@@ -85,7 +89,7 @@ pre.line-numbers {
 	padding-left: 3.2em; /* leave room for line numbers */
 }
 pre.line-numbers > code {
-	padding-left: 0; /* avoid double padding */
+	padding-left: 0;
 }
 pre[class*="language-"] {
 	position: relative;
@@ -167,10 +171,8 @@ div.code-toolbar > .toolbar .toolbar-item > span {
 	code {
 		background-color: #111;
 	}
-	pre code {
+	pre {
 		background: #0d1117; /* github-ish */
-		border: none;
-		box-shadow: none;
 	}
 	hr {
 		border-color: #222;
@@ -190,10 +192,8 @@ div.code-toolbar > .toolbar .toolbar-item > span {
 .light-theme code {
     background-color: #eee !important;
 }
-.light-theme pre code {
+.light-theme pre {
 	background: #f6f8fa !important;
-	border: none !important;
-	box-shadow: none;
 }
 .light-theme hr,
 .light-theme #main {
@@ -210,10 +210,8 @@ div.code-toolbar > .toolbar .toolbar-item > span {
 .dark-theme code {
     background-color: #111 !important;
 }
-.dark-theme pre code {
+.dark-theme pre {
 	background: #0d1117 !important;
-	border: none !important;
-	box-shadow: none;
 }
 .dark-theme hr,
 .dark-theme #main {
