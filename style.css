@@ -128,7 +128,7 @@ div.code-toolbar:hover > .toolbar {
 	pre code {
 		background: #0d1117; /* github-ish */
 		border: none;
-		box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
+		box-shadow: none;
 	}
 	hr {
 		border-color: #222;
@@ -151,7 +151,7 @@ div.code-toolbar:hover > .toolbar {
 .light-theme pre code {
 	background: #f6f8fa !important;
 	border: none !important;
-	box-shadow: inset 0 0 0 1px rgba(0,0,0,0.10);
+	box-shadow: none;
 }
 .light-theme hr,
 .light-theme #main {
@@ -171,7 +171,7 @@ div.code-toolbar:hover > .toolbar {
 .dark-theme pre code {
 	background: #0d1117 !important;
 	border: none !important;
-	box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
+	box-shadow: none;
 }
 .dark-theme hr,
 .dark-theme #main {
