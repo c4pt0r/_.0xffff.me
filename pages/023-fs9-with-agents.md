@@ -1,5 +1,3 @@
-# The Simplest Agent-to-Agent Communication: Just Use a Filesystem
-
 Every few months, a new agent communication protocol appears. But for most agent workloads, the simplest answer is something we've had since the 1970s: a filesystem.
 
 ## Files as messages
