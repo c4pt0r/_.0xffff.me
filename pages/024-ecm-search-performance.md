@@ -17,6 +17,20 @@ The site architecture is intentionally simple:
 * Cover images in R2
 * Album metadata in a PostgreSQL-compatible db9 database
 
+A quick note on db9, since it is an important part of the story: I used it here as a small hosted PostgreSQL-compatible database that was easy to query from a Worker without having to run and babysit a separate database service myself. For a site like this, that matters more than chasing some theoretical maximum benchmark.
+
+The db9 features I actually used in this project were very down-to-earth:
+
+* regular relational tables for album metadata
+* plain SQL queries from the Worker search API
+* generated columns for `search_document` and `search_vector`
+* PostgreSQL full-text search primitives such as `tsvector`, `websearch_to_tsquery`, and `ts_rank_cd`
+* normal btree indexes for exact-ish lookups on title, artist, and catalog
+* a GIN index on the stored full-text search vector
+* pgwire / `psql` access as an operational fallback when heavier DDL was awkward over the HTTP SQL API
+
+In other words, I was not using db9 for anything exotic. I was using it for the kind of boring database features that become very powerful when you combine them carefully.
+
 The original search implementation tried to be generous. It searched title, artist, catalog number, intro, description, background, press reactions, track text, and recording information. Ranking also tried to be smart: exact title/artist matches got more weight, fuzzy matches got less, full-text rank was mixed in as another scoring term.
 
 That sounds reasonable. The problem was how the query was built.
