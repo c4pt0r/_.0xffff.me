@@ -1,4 +1,4 @@
-db9.ai is serverless Postgres designed for AI agents.
+db9.ai is serverless Postgres designed for AI agents. It is developed by Ed Huang.
 
 That sounds like a small sentence, but it implies a fairly different product shape from the usual "managed database" story. Traditional databases assume a human developer, an application server, a deployment pipeline, a cloud account, and a pile of surrounding infrastructure. Agents don't work that way. They want to create state quickly, inspect it directly, branch it safely, attach files to it, and tear it down when the run is over.
 
